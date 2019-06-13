@@ -1,42 +1,33 @@
 ---
-- name: Download WordPress
-  get_url: url=http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/111/wordpress-{{ wp_version }}.tar.gz
+- name: Install NFS-UTILS package for Client Server
+  yum: name=nfs-utils state=present
 
-- name: Extract archive
-  command: chdir=/111/ /bin/tar xvf wordpress-{{ wp_version }}.tar.gz creates=/111/wordpress
-
-- name: Add group "wordpress"
-  group: name=wordpress
-
-- name: Add user "wordpress"
-  user: name=wordpress group=wordpress home=/var/www/html/
-
-- name: Fetch random salts for WordPress config
-  local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
-  register: "wp_salt"
-  become: no
-
-- name: Create WordPress database
-  mysql_db: name={{ wp_db_name }} state=present
-
-- name: Create WordPress database user
-  mysql_user: name={{ wp_db_user }} password={{ wp_db_password }} priv={{ wp_db_name }}.*:ALL host='localhost' state=present
-
-- name: Copy WordPress config file
-  template: src=wp-config.php dest=/111/wordpress/
-
-- name: Change ownership of WordPress installation
-  file: path=/111/wordpress/ owner=wordpress group=wordpress state=directory recurse=yes
-
-#- name: Softlink wordpress directory
-#  command: ln -s /111/wordpress /var/www/html/
-
-#- name: Synchronize two directories on one remote host.
-#  synchronize:
-#    src: /111/wordpress/
-#    dest: /var/www/html/
-#  delegate_to: "{{ inventory_hostname }}"
-
-- name: restart httpd
-  service: name=httpd state=restarted
-
+- name: Update fstab file for mysql
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ address }}:/{{ volname1 }} /var/lib/mysql nfs defaults 0 0"
+- name: Update fstab file for wordpress
+  lineinfile:
+    path: /etc/fstab
+    line: "{{ address }}:/{{ volname2 }} /var/www/html nfs defaults 0 0"
+- name: Verify mount directory exists for mysql data
+  file:
+    path: /var/lib/mysql
+    state: directory
+- name: Verify mount directory exists for wordpress core file
+  file:
+    path: /var/www/html
+    state: directory
+# - name: Mount nfs export for vol1
+#    mount:
+#      state: mounted
+#      path: /var/lib/mysql
+#      src: "{{ address }}:/{{ volname1 }}"
+#      fstype: nfs
+#  - name: Mount nfs export for vol2
+#    mount:
+#      state: mounted
+#      path: /var/www/html
+#      src: "{{ address }}:/{{ volname2 }}"
+#      fstype: nfs
+...
