@@ -1,4 +1,9 @@
 ---
+- name: ansible create directory example
+  file:
+    path: /111/
+    state: directory
+
 - name: Download WordPress
   get_url: url=http://wordpress.org/wordpress-{{ wp_version }}.tar.gz dest=/111/wordpress-{{ wp_version }}.tar.gz
 
